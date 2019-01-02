@@ -25,11 +25,11 @@ import {
  */
 export default (apiUrl, httpClient = fetchUtils.fetchJson) => {
   /**
-     * @param {String} type One of the constants appearing at the top if this file, e.g. 'UPDATE'
-     * @param {String} resource Name of the resource to fetch, e.g. 'posts'
-     * @param {Object} params The data request params, depending on the type
-     * @returns {Object} { url, options } The HTTP request parameters
-     */
+   * @param {String} type One of the constants appearing at the top if this file, e.g. 'UPDATE'
+   * @param {String} resource Name of the resource to fetch, e.g. 'posts'
+   * @param {Object} params The data request params, depending on the type
+   * @returns {Object} { url, options } The HTTP request parameters
+   */
   const convertDataRequestToHTTP = (type, resource, params) => {
     let url = "";
     const options = {};
@@ -52,8 +52,8 @@ export default (apiUrl, httpClient = fetchUtils.fetchJson) => {
         break;
       }
       case GET_MANY_REFERENCE: {
-        const { page, perPage } = params.pagination;
-        url = `${apiUrl}/${resource}?page=${page}&pageSize=${perPage}`;
+        console.log(params);
+        url = `${apiUrl}/${resource}/${params.id}`;
         break;
       }
       case UPDATE:
@@ -77,26 +77,31 @@ export default (apiUrl, httpClient = fetchUtils.fetchJson) => {
   };
 
   /**
-     * @param {Object} response HTTP response from fetch()
-     * @param {String} type One of the constants appearing at the top if this file, e.g. 'UPDATE'
-     * @param {String} resource Name of the resource to fetch, e.g. 'posts'
-     * @param {Object} params The data request params, depending on the type
-     * @returns {Object} Data response
-     */
+   * @param {Object} response HTTP response from fetch()
+   * @param {String} type One of the constants appearing at the top if this file, e.g. 'UPDATE'
+   * @param {String} resource Name of the resource to fetch, e.g. 'posts'
+   * @param {Object} params The data request params, depending on the type
+   * @returns {Object} Data response
+   */
   const convertHTTPResponse = (response, type, resource, params) => {
     const { headers, json } = response;
     switch (type) {
       case GET_LIST:
-      case GET_MANY_REFERENCE:
-        if (!json.hasOwnProperty(numberOfElements)) {
+        if (!json.hasOwnProperty("totalElements")) {
           throw new Error(
-            "The numberOfElements property must be must be present in the Json response"
+            "The totalElements property must be must be present in the Json response"
           );
         }
         return {
           data: json.content,
-          total: parseInt(json.numberOfElements, 10)
+          total: parseInt(json.totalElements, 10)
         };
+      case GET_MANY_REFERENCE:
+        return {
+          data: json,
+          total: json.length
+        };
+
       case CREATE:
         return { data: { ...params.data, id: json.id } };
       default:
@@ -105,11 +110,11 @@ export default (apiUrl, httpClient = fetchUtils.fetchJson) => {
   };
 
   /**
-     * @param {string} type Request type, e.g GET_LIST
-     * @param {string} resource Resource name, e.g. "posts"
-     * @param {Object} payload Request parameters. Depends on the request type
-     * @returns {Promise} the Promise for a data response
-     */
+   * @param {string} type Request type, e.g GET_LIST
+   * @param {string} resource Resource name, e.g. "posts"
+   * @param {Object} payload Request parameters. Depends on the request type
+   * @returns {Promise} the Promise for a data response
+   */
   return (type, resource, params) => {
     // simple-rest doesn't handle filters on UPDATE route, so we fallback to calling UPDATE n times instead
     if (type === UPDATE_MANY) {
