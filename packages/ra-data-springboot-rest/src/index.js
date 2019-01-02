@@ -36,7 +36,7 @@ export default (apiUrl, httpClient = fetchUtils.fetchJson) => {
     switch (type) {
       case GET_LIST: {
         const { page, perPage } = params.pagination;
-        url = `${apiUrl}/${resource}?page=${page}&pageSize=${perPage}`;
+        url = `${apiUrl}/${resource}?page=${page - 1}&pageSize=${perPage}`;
         break;
       }
       case GET_ONE:
